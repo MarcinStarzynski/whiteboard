@@ -1,0 +1,6 @@
+.toolbar {
+  display: flex;
+  gap: 12;
+  margin-bottom: 8;
+  justify-content: center;
+}

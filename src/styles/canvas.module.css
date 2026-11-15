@@ -1,0 +1,14 @@
+.canvas {
+  background-color: white;
+  cursor: crosshair;
+}
+
+.canvas_eraser_mode {
+  composes: canvas;
+  cursor: none;
+}
+
+.wrapper {
+  position: relative;
+  width: fit-content;
+}
