@@ -102,6 +102,27 @@ export const useCanvas = (draw: DrawFn) => {
     return () => shortcuts.unregister({ key: "z", modifiers: ["Ctrl"] });
   }, [undo, shortcuts]);
 
+  const redo = useCallback(() => {
+    setHistoryIndex((prevIndex) => {
+      if (prevIndex < history.length - 1) {
+        const newIndex = prevIndex + 1;
+        setStrokes(history[newIndex]);
+        return newIndex
+      }
+      return prevIndex
+    });
+  }, [history]);
+
+  useEffect(() => {
+    shortcuts.register({ key: "y", modifiers: ["Ctrl"]}, redo);
+    return () => shortcuts.unregister({ key: "y", modifiers: ["Ctrl"] });
+  }, [redo, shortcuts])
+
+  useEffect(() => {
+    shortcuts.register({ key: "z", modifiers: ["Ctrl", "Shift"]}, redo);
+    return () => shortcuts.unregister({ key: "z", modifiers: ["Ctrl", "Shift"] });
+  }, [redo, shortcuts])
+
   return {
     canvasRef,
     handlers: {
