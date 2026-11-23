@@ -1,19 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import type { Point, Stroke, Tool } from "../types/Stroke";
 import { isNearStroke } from "../utils/geometry";
+import useShortcuts from "./useShortcuts";
 
 type DrawFn = (ctx: CanvasRenderingContext2D, strokes: Stroke[]) => void;
 
 export const useCanvas = (draw: DrawFn) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [history, setHistory] = useState<Stroke[][]>([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [current, setCurrent] = useState<Stroke | null>(null);
   const [color, setColor] = useState("#000000");
   const [width, setWidth] = useState(3);
   const [eraserWidth, setEraserWidth] = useState(20);
   const [tool, setTool] = useState<Tool>("pen");
   const [cursor, setCursor] = useState<Point | null>(null);
+  const shortcuts = useShortcuts();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -71,9 +75,32 @@ export const useCanvas = (draw: DrawFn) => {
 
   const onPointerUp = () => {
     if (!current) return;
-    setStrokes((prev) => [...prev, current]);
+    const newStrokes = [...strokes, current];
+    setStrokes(newStrokes);
+    
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newStrokes);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    
     setCurrent(null);
   };
+
+  const undo = useCallback(() => {
+    setHistoryIndex((prevIndex) => {
+      if (prevIndex > 0) {
+        const newIndex = prevIndex - 1;
+        setStrokes(history[newIndex]);
+        return newIndex;
+      }
+      return prevIndex;
+    });
+  }, [history]);
+
+  useEffect(() => {
+    shortcuts.register({ key: "z", modifiers: ["Ctrl"] }, undo);
+    return () => shortcuts.unregister({ key: "z", modifiers: ["Ctrl"] });
+  }, [undo, shortcuts]);
 
   return {
     canvasRef,

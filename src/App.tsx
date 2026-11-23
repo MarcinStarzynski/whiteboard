@@ -1,12 +1,14 @@
 import { Canvas } from "./components/Canvas";
+import ShortcutProvider from "./contexts/ShortcutProvider";
 import { draw } from "./utils/Draw";
 
 function App() {
   return (
-    <div>
-      Nie rysuj kutasów
-      <Canvas draw={draw} />
-    </div>
+    <ShortcutProvider>
+      <div>
+        <Canvas draw={draw} />
+      </div>
+    </ShortcutProvider>
   );
 }
 

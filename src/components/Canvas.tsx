@@ -1,8 +1,15 @@
+import type { ComponentProps } from "react";
 import style from "../styles/canvas.module.css";
 import { useCanvas } from "../hooks/useCanvas";
 import { ToolBar } from "./ToolBar";
 
-export const Canvas = (props: any) => {
+type CanvasProps = ComponentProps<"canvas"> & {
+  draw?: Parameters<typeof useCanvas>[0];
+};
+
+const noopDraw: Parameters<typeof useCanvas>[0] = () => {};
+
+export const Canvas = (props: CanvasProps) => {
   const { draw, ...rest } = props;
   const {
     canvasRef,
@@ -16,7 +23,7 @@ export const Canvas = (props: any) => {
     cursor,
     eraserWidth,
     setEraserWidth,
-  } = useCanvas(draw);
+  } = useCanvas(draw ?? noopDraw);
   const isEraser = tool === "eraser" || tool === "line_eraser";
 
   return (
