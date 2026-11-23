@@ -1,19 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import type { Point, Stroke, Tool } from "../types/Stroke";
 import { isNearStroke } from "../utils/geometry";
+import useShortcuts from "./useShortcuts";
 
 type DrawFn = (ctx: CanvasRenderingContext2D, strokes: Stroke[]) => void;
 
 export const useCanvas = (draw: DrawFn) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [current, setCurrent] = useState<Stroke | null>(null);
   const [color, setColor] = useState("#000000");
   const [width, setWidth] = useState(3);
   const [eraserWidth, setEraserWidth] = useState(20);
   const [tool, setTool] = useState<Tool>("pen");
   const [cursor, setCursor] = useState<Point | null>(null);
+  const shortcuts = useShortcuts();
+  
+  const historyRef = useRef<Stroke[][]>([[]]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,7 +35,13 @@ export const useCanvas = (draw: DrawFn) => {
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
-  const eraseAt = (point: Point) => {
+  const addToHistory = useCallback((newStrokes: Stroke[]) => {
+    historyRef.current = historyRef.current.slice(0, historyIndex + 1);
+    historyRef.current.push(newStrokes);
+    setHistoryIndex(historyRef.current.length - 1);
+  }, [historyIndex]);
+
+  const eraseAt = useCallback((point: Point) => {
     const radius = eraserWidth / 2;
     setStrokes((prev) =>
       prev.filter((s, i) => {
@@ -41,9 +52,9 @@ export const useCanvas = (draw: DrawFn) => {
           .some((e) => e.tool === "eraser" && isNearStroke(point, e, 0));
       }),
     );
-  };
+  }, [eraserWidth]);
 
-  const onPointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
+  const onPointerDown = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
     const point = getPoint(e);
     if (tool === "line_eraser") {
@@ -57,9 +68,9 @@ export const useCanvas = (draw: DrawFn) => {
       color,
       width: tool === "eraser" ? eraserWidth : width,
     });
-  };
+  }, [tool, eraserWidth, width, color, eraseAt]);
 
-  const onPointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
+  const onPointerMove = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     const point = getPoint(e);
     setCursor(point);
     if (tool === "line_eraser") {
@@ -67,13 +78,53 @@ export const useCanvas = (draw: DrawFn) => {
       return;
     }
     setCurrent((c) => (c ? { ...c, points: [...c.points, point] } : c));
-  };
+  }, [tool, eraseAt]);
 
-  const onPointerUp = () => {
-    if (!current) return;
-    setStrokes((prev) => [...prev, current]);
-    setCurrent(null);
-  };
+  const onPointerUp = useCallback(() => {
+    setCurrent((c) => {
+      if (!c) return null;
+      setStrokes((prev) => {
+        const newStrokes = [...prev, c];
+        addToHistory(newStrokes);
+        return newStrokes;
+      });
+      return null;
+    });
+  }, [addToHistory]);
+
+  const undo = useCallback(() => {
+    setHistoryIndex((prevIndex) => {
+      const newIndex = Math.max(0, prevIndex - 1);
+      setStrokes(historyRef.current[newIndex]);
+      return newIndex;
+    });
+  }, []);
+
+  const redo = useCallback(() => {
+    setHistoryIndex((prevIndex) => {
+      const newIndex = Math.min(prevIndex + 1, historyRef.current.length - 1);
+      setStrokes(historyRef.current[newIndex]);
+      return newIndex;
+    });
+  }, []);
+
+  useEffect(() => {
+    shortcuts.register({ key: "z", modifiers: ["Ctrl"] }, undo);
+    shortcuts.register({ key: "z", modifiers: ["Meta"] }, undo);
+    shortcuts.register({ key: "y", modifiers: ["Ctrl"] }, redo);
+    shortcuts.register({ key: "y", modifiers: ["Meta"] }, redo);
+    shortcuts.register({ key: "z", modifiers: ["Ctrl", "Shift"] }, redo);
+    shortcuts.register({ key: "z", modifiers: ["Meta", "Shift"] }, redo);
+    
+    return () => {
+      shortcuts.unregister({ key: "z", modifiers: ["Ctrl"] });
+      shortcuts.unregister({ key: "z", modifiers: ["Meta"] });
+      shortcuts.unregister({ key: "y", modifiers: ["Ctrl"] });
+      shortcuts.unregister({ key: "y", modifiers: ["Meta"] });
+      shortcuts.unregister({ key: "z", modifiers: ["Ctrl", "Shift"] });
+      shortcuts.unregister({ key: "z", modifiers: ["Meta", "Shift"] });
+    };
+  }, [undo, redo, shortcuts]);
 
   return {
     canvasRef,
