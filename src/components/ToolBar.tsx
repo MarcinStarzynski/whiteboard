@@ -10,6 +10,7 @@ interface ToolBarProps {
   setEraserWidth: (w: number) => void;
   tool: Tool;
   setTool: (t: Tool) => void;
+  exportJpg: () => void;
 }
 
 export const ToolBar = ({
@@ -21,6 +22,7 @@ export const ToolBar = ({
   setEraserWidth,
   tool,
   setTool,
+  exportJpg
 }: ToolBarProps) => {
   const isEraser = tool === "eraser" || tool === "line_eraser";
   const currentWidth = isEraser ? eraserWidth : width;
@@ -53,6 +55,7 @@ export const ToolBar = ({
         onChange={(e) => setCurrentWidth(Number(e.target.value))}
       />
       <span>{currentWidth}px</span>
+      <button onClick={() => exportJpg()}>Save image</button>
     </div>
   );
 };
