@@ -1,6 +1,13 @@
 .canvas {
   background-color: white;
   cursor: crosshair;
+  display: block;
+  max-width: 100%;
+  height: auto;
+  @media (max-width: 768px) {
+    width: 100vw;
+    height: calc(100vh - 150px);
+  } 
 }
 
 .canvas_eraser_mode {
@@ -10,5 +17,7 @@
 
 .wrapper {
   position: relative;
-  width: fit-content;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
 }
