@@ -31,16 +31,16 @@ export const ToolBar = ({
   return (
     <div className={style.toolbar}>
       <button onClick={() => setTool("pen")} disabled={tool === "pen"}>
-        Ołówek
+        Pen
       </button>
       <button
         onClick={() => setTool("line_eraser")}
         disabled={tool === "line_eraser"}
       >
-        Usuń kreskę
+        Erase strokes
       </button>
       <button onClick={() => setTool("eraser")} disabled={tool === "eraser"}>
-        Gumka
+        Erase pixels
       </button>
       <input
         type="color"
