@@ -3,6 +3,7 @@ import type { PointerEvent } from "react";
 import type { Point, Stroke, Tool } from "../types/Stroke";
 import { isNearStroke } from "../utils/geometry";
 import useShortcuts from "./useShortcuts";
+import { exportCanvasAsJpg } from "../utils/exportJpg";
 
 type DrawFn = (ctx: CanvasRenderingContext2D, strokes: Stroke[]) => void;
 
@@ -108,6 +109,12 @@ export const useCanvas = (draw: DrawFn) => {
     });
   }, []);
 
+  const exportJpg = useCallback(() => {
+    if(canvasRef.current) {
+      exportCanvasAsJpg(canvasRef.current);
+    }
+  }, [])
+
   useEffect(() => {
     shortcuts.register({ key: "z", modifiers: ["Ctrl"] }, undo);
     shortcuts.register({ key: "z", modifiers: ["Meta"] }, undo);
@@ -143,5 +150,6 @@ export const useCanvas = (draw: DrawFn) => {
     tool,
     setTool,
     cursor,
+    exportJpg
   };
 };

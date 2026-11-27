@@ -23,6 +23,7 @@ export const Canvas = (props: CanvasProps) => {
     cursor,
     eraserWidth,
     setEraserWidth,
+    exportJpg
   } = useCanvas(draw ?? noopDraw);
   const isEraser = tool === "eraser" || tool === "line_eraser";
 
@@ -37,6 +38,7 @@ export const Canvas = (props: CanvasProps) => {
         setEraserWidth={setEraserWidth}
         tool={tool}
         setTool={setTool}
+        exportJpg={exportJpg}
       />
       <div className={style.wrapper}>
         <canvas
